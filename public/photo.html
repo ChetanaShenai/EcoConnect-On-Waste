@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Waste</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="text-align: center; background-color: #e8ffe8;">
+
+  <h1>📸 Report Waste</h1>
+
+  <video id="camera" width="320" height="240" autoplay></video><br>
+  <button id="clickPhoto">Take Photo</button><br>
+  <canvas id="photoCanvas" width="320" height="240" style="display:none;"></canvas><br>
+
+  <input type="file" id="galleryInput" accept="image/*"><br><br>
+  <button id="getLocation">Get Location</button>
+  <p id="location"></p>
+  <button id="upload">Upload Report</button>
+
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('photoCanvas');
+    const context = canvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert('Camera not accessible: ' + err));
+
+    document.getElementById('clickPhoto').onclick = () => {
+      canvas.style.display = 'block';
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    };
+
+    let latitude, longitude;
+    document.getElementById('getLocation').onclick = () => {
+      navigator.geolocation.getCurrentPosition(pos => {
+        latitude = pos.coords.latitude;
+        longitude = pos.coords.longitude;
+        document.getElementById('location').textContent =
+          `Location: ${latitude}, ${longitude}`;
+      });
+    };
+
+    document.getElementById('upload').onclick = async () => {
+      const image = canvas.toDataURL('image/png');
+      const data = { image, latitude, longitude };
+      const res = await fetch('http://localhost:8080/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      alert(await res.text());
+    };
+  </script>
+</body>
+</html>
